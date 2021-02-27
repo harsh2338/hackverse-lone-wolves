@@ -11,11 +11,11 @@ class Eye():
         self.detector = dlib.get_frontal_face_detector()
         self.predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
         _, self.frame = self.capture.read()
-
         self.gray_img = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
-
         self.faces = self.detector(self.gray_img)
-
+        self.keyboard = np.zeros((600, 1000, 3), np.uint8)
+        self.keyboard.fill(255)
+        self.counter=0
         self.algo()
 
     def get_eye_dimensions(self,extremes,top,bottom,landmarks):
@@ -36,19 +36,14 @@ class Eye():
         eye_length = self.get_distance(left_point, right_point)
 
         return eye_length,eye_height
-
     def is_blinking(self,landmarks):
         left_len,left_ht=self.get_eye_dimensions(constants.LEFT_EYE_HORIZONTAL_EXTREMES,constants.LEFT_EYE_TOP,constants.LEFT_EYE_BOTTOM,landmarks)
         right_len,right_ht=self.get_eye_dimensions(constants.RIGHT_EYE_HORIZONTAL_EXTREMES,constants.RIGHT_EYE_TOP,constants.RIGHT_EYE_BOTTOM,landmarks)
         return (left_len/left_ht>4) and (right_len/right_ht>4)
-
-
     def get_mid_point(self,p1,p2):
         return Point(int((p1.x+p2.x)/2),int((p1.y+p2.y)/2))
-
     def get_distance(self,p1,p2):
         return math.sqrt(pow(p1.x-p2.x,2)+pow(p1.y-p2.y,2))
-
     def extract_eye(self,left_eye_region):
         height, width, _ = self.frame.shape
         mask = np.zeros((height, width), np.uint8)
@@ -79,7 +74,6 @@ class Eye():
 
         wb_ratio=left_white / right_white
         return  wb_ratio
-
     def get_gaze_direction(self, landmarks):
         left_eye_region = np.array([(landmarks.part(36).x, landmarks.part(36).y),
                                     (landmarks.part(37).x, landmarks.part(37).y),
@@ -106,11 +100,45 @@ class Eye():
             cv2.putText(self.frame, 'Centre', (50, 150), cv2.FONT_HERSHEY_COMPLEX, color=(255, 0, 0), thickness=3,
                         fontScale=3)
 
+    def letter(self,text, x, y,is_highlighted):
+        width = height = 200
+        th = 3
+        if(is_highlighted):
+            cv2.rectangle(self.keyboard, (x + th, y + th), (x + width - th, y + height - th), (255, 0, 0), th)
+        else:
+            cv2.rectangle(self.keyboard, (x + th, y + th), (x + width - th, y + height - th), (0, 0, 0), th)
+        font_letter = cv2.FONT_HERSHEY_PLAIN
+        font_scale = 10
+        font_th = 4
+        text_size = cv2.getTextSize(text, font_letter, font_scale, font_th)[0]
+        width_text, height_text = text_size[0], text_size[1]
+        text_x = int((width - width_text) / 2) + x
+        text_y = int((height + height_text) / 2) + y
+        cv2.putText(self.keyboard, text, (text_x, text_y), font_letter, font_scale, (0, 0, 0), font_th)
+
+    def show_left_keys(self,highlight_index):
+
+        index=0
+        ran=None
+        for i in range(0,600,200):
+            if(i==400):
+                ran=range(200,800,200)
+            else :
+                ran=range(0,1000,200)
+            for j in ran:
+                self.letter(constants.LEFT_LETTERS[index],j,i,highlight_index==index)
+                index+=1
+
     def algo(self):
 
+        highlight_index=0
         while True:
             _, self.frame = self.capture.read()
-
+            self.counter+=1
+            if(self.counter%20==0):
+                highlight_index+=1
+                highlight_index=highlight_index%13
+                self.counter=0
             self.gray_img = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
 
             self.faces = self.detector(self.gray_img)
@@ -123,7 +151,10 @@ class Eye():
                     cv2.putText(self.frame, 'Closed', (50, 150), cv2.FONT_HERSHEY_COMPLEX, color=(255, 0, 0), thickness=3,
                                 fontScale=3)
 
+
             cv2.imshow("Frame", self.frame)
+            cv2.imshow("Keyboard", self.keyboard)
+            self.show_left_keys(highlight_index)
             key = cv2.waitKey(1)
             if key == 27:
                 break

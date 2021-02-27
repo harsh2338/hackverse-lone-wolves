@@ -5,6 +5,8 @@ import math
 import constants
 import pyglet
 from point import Point
+import autocomplete
+
 import  time
 class Eye():
     def __init__(self):
@@ -187,13 +189,11 @@ class Eye():
                                         fontScale=3)
 
     def algo(self):
-
         highlight_index=0
         blinking_counter=0
         gaze_counter=0
         is_keyboard_selected=False
-        initial_wait=True
-        is_input_type_selected=False
+
 
         while True:
             _, self.frame = self.capture.read()
@@ -224,19 +224,29 @@ class Eye():
                         cv2.putText(self.frame, 'Closed', (50, 150), cv2.FONT_HERSHEY_COMPLEX, color=(255, 0, 0), thickness=3,
                                         fontScale=3)
                         if(blinking_counter==constants.FPS):
+
                             if(self.keyboard_contents[highlight_index]=='123'):
                                 self.current_selected_input_type='Numeric'
                                 self.keyboard_contents=constants.NUMBERS
+                                self.counter = 1
+                                highlight_index = 0
                             elif(self.keyboard_contents[highlight_index]=='Right'):
                                 self.current_selected_input_type = 'Right'
                                 self.keyboard_contents = constants.RIGHT_LETTERS
+                                self.counter = 1
+                                highlight_index = 0
                                 # self.text+='?'
                             elif(self.keyboard_contents[highlight_index]=='Left'):
                                 self.current_selected_input_type = 'Left'
                                 self.keyboard_contents = constants.LEFT_LETTERS
+                                self.counter = 1
+                                highlight_index = 0
                                 # is_keyboard_selected=False
                             else:
                                 self.text+=self.keyboard_contents[highlight_index]
+                                # print(autocomplete.predict('',str(self.text)))
+                                self.counter = 1
+                                highlight_index = 0
 
                         blinking_counter+=1
                         self.counter-=1
@@ -285,6 +295,7 @@ class Eye():
 
 def main():
     # sound = pyglet.media.load("click.wav", streaming=False)
+    autocomplete.load()
     Eye()
 
 

@@ -8,3 +8,5 @@ RIGHT_EYE_BOTTOM=[47,46]
 
 LEFT_LETTERS=['A','B','C','D','E','F','G','H','I','J','K','L','M']
 RIGHT_LETTERS=['N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
+
+FPS=30

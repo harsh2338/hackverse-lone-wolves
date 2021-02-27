@@ -132,10 +132,12 @@ class Eye():
     def algo(self):
 
         highlight_index=0
+        blinking_counter=0
         while True:
             _, self.frame = self.capture.read()
             self.counter+=1
-            if(self.counter%20==0):
+
+            if(self.counter%constants.FPS==0):
                 highlight_index+=1
                 highlight_index=highlight_index%13
                 self.counter=0
@@ -150,6 +152,13 @@ class Eye():
                 if (self.is_blinking(landmarks)):
                     cv2.putText(self.frame, 'Closed', (50, 150), cv2.FONT_HERSHEY_COMPLEX, color=(255, 0, 0), thickness=3,
                                 fontScale=3)
+                    if(blinking_counter==constants.FPS):
+                        print(constants.LEFT_LETTERS[highlight_index])
+                    blinking_counter+=1
+                    self.counter-=1
+
+                else:
+                    blinking_counter=0
 
 
             cv2.imshow("Frame", self.frame)

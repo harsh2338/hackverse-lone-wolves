@@ -143,24 +143,29 @@ class Eye():
 
     def draw_window(self,highlight_index):
         index=0
+        #
+        # if(self.current_selected_input_type=='Numeric'):
+        #
+        #     for i in range(0, 600, 200):
+        #         if(i==400):
+        #             for j in range(0, 800, 200):
+        #                 self.show_contents(self.keyboard_contents[index], j, i, highlight_index == index)
+        #                 index+=1
+        #         else:
+        #             for j in range(0, 1000, 200):
+        #                 self.show_contents(self.keyboard_contents[index], j, i, highlight_index == index)
+        #                 index += 1
+        #
+        # else:
+        #     for i in range(0,600,200):
+        #         for j in range(0,1000,200):
+        #             self.show_contents(self.keyboard_contents[index],j,i,highlight_index==index)
+        #             index+=1
 
-        if(self.current_selected_input_type=='Numeric'):
-
-            for i in range(0, 600, 200):
-                if(i==400):
-                    for j in range(200, 800, 200):
-                        self.show_contents(self.keyboard_contents[index], j, i, highlight_index == index)
-                        index+=1
-                else:
-                    for j in range(0, 1000, 200):
-                        self.show_contents(self.keyboard_contents[index], j, i, highlight_index == index)
-                        index += 1
-
-        else:
-            for i in range(0,600,200):
-                for j in range(0,1000,200):
-                    self.show_contents(self.keyboard_contents[index],j,i,highlight_index==index)
-                    index+=1
+        for i in range(0, 600, 200):
+            for j in range(0, 1000, 200):
+                self.show_contents(self.keyboard_contents[index], j, i, highlight_index == index)
+                index += 1
 
     def num_letter(self):
         rows, cols, _ = self.keyboard.shape
@@ -219,12 +224,17 @@ class Eye():
                         cv2.putText(self.frame, 'Closed', (50, 150), cv2.FONT_HERSHEY_COMPLEX, color=(255, 0, 0), thickness=3,
                                         fontScale=3)
                         if(blinking_counter==constants.FPS):
-                            if(self.keyboard_contents[highlight_index]=='_'):
-                                self.text+=' '
-                            elif(self.keyboard_contents[highlight_index]=='?'):
-                                self.text+='?'
-                            elif(self.keyboard_contents[highlight_index]=='Back'):
-                                is_keyboard_selected=False
+                            if(self.keyboard_contents[highlight_index]=='123'):
+                                self.current_selected_input_type='Numeric'
+                                self.keyboard_contents=constants.NUMBERS
+                            elif(self.keyboard_contents[highlight_index]=='Right'):
+                                self.current_selected_input_type = 'Right'
+                                self.keyboard_contents = constants.RIGHT_LETTERS
+                                # self.text+='?'
+                            elif(self.keyboard_contents[highlight_index]=='Left'):
+                                self.current_selected_input_type = 'Left'
+                                self.keyboard_contents = constants.LEFT_LETTERS
+                                # is_keyboard_selected=False
                             else:
                                 self.text+=self.keyboard_contents[highlight_index]
 

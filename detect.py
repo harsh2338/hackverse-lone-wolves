@@ -3,10 +3,15 @@ import numpy as np
 import dlib
 import math
 import constants
+import pyglet
 from point import Point
-
+import  time
 class Eye():
     def __init__(self):
+        # self.click_notifier=pyglet.media.load('click.wav',streaming=False)
+        # self.sound = pyglet.media.load("click.wav", streaming=False)
+
+        # time.sleep(1)
         self.capture = cv2.VideoCapture(0)
         self.detector = dlib.get_frontal_face_detector()
         self.predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
@@ -15,9 +20,14 @@ class Eye():
         self.faces = self.detector(self.gray_img)
         self.keyboard = np.zeros((600, 1000, 3), np.uint8)
         self.keyboard.fill(255)
+        self.board = np.zeros((300, 1000), np.uint8)
+        self.board.fill(255)
+        self.current_selected_input_type=None
+        self.keyboard_contents=None
         self.counter=0
-        self.algo()
+        self.text=""
 
+        self.algo()
     def get_eye_dimensions(self,extremes,top,bottom,landmarks):
 
         left_point = Point(landmarks.part(extremes[0]).x,
@@ -62,7 +72,7 @@ class Eye():
         eye = cv2.resize(gray_eye, None, fx=5, fy=5)
 
         # cv2.imshow("Eye", eye)
-        cv2.imshow("Threshold", threshold_eye)
+        # cv2.imshow("Threshold", threshold_eye)
         # cv2.imshow("Left eye", left_eye)
 
         threshold_eye_row_num, threshold_eye_col_num = threshold_eye.shape
@@ -93,77 +103,151 @@ class Eye():
         if(left_ratio<1 and right_ratio<1):
             cv2.putText(self.frame, 'Right', (50, 150), cv2.FONT_HERSHEY_COMPLEX, color=(0, 0, 255), thickness=3,
                         fontScale=3)
+            time.sleep(2)
+            return "Right"
         elif(left_ratio>2.4 and right_ratio>2.4):
             cv2.putText(self.frame, 'Left', (50, 150), cv2.FONT_HERSHEY_COMPLEX, color=(255, 0, 0), thickness=3,
                         fontScale=3)
+            time.sleep(2)
+            return "Left"
+
         else:
             cv2.putText(self.frame, 'Centre', (50, 150), cv2.FONT_HERSHEY_COMPLEX, color=(255, 0, 0), thickness=3,
                         fontScale=3)
+            return "Centre"
+
 
     def letter(self,text, x, y,is_highlighted):
-        width = height = 200
+        if(self.current_selected_input_type=='Numeric'):
+            width = height = 200
+        else:
+            width=height=150
         th = 3
+
         if(is_highlighted):
             cv2.rectangle(self.keyboard, (x + th, y + th), (x + width - th, y + height - th), (255, 0, 0), th)
         else:
             cv2.rectangle(self.keyboard, (x + th, y + th), (x + width - th, y + height - th), (0, 0, 0), th)
+
         font_letter = cv2.FONT_HERSHEY_PLAIN
         font_scale = 10
         font_th = 4
+        if(len(text)!=1):
+            font_scale=4
+            font_th=2
         text_size = cv2.getTextSize(text, font_letter, font_scale, font_th)[0]
         width_text, height_text = text_size[0], text_size[1]
         text_x = int((width - width_text) / 2) + x
         text_y = int((height + height_text) / 2) + y
         cv2.putText(self.keyboard, text, (text_x, text_y), font_letter, font_scale, (0, 0, 0), font_th)
 
-    def show_left_keys(self,highlight_index):
-
+    def show_keys(self,highlight_index):
         index=0
-        ran=None
-        for i in range(0,600,200):
-            if(i==400):
-                ran=range(200,800,200)
-            else :
-                ran=range(0,1000,200)
-            for j in ran:
-                self.letter(constants.LEFT_LETTERS[index],j,i,highlight_index==index)
-                index+=1
+
+        if(self.current_selected_input_type=='Numeric'):
+
+            for i in range(0, 800, 200):
+                for j in range(200, 800, 200):
+                    self.letter(self.keyboard_contents[index], j, i, highlight_index == index)
+                    index+=1
+        else:
+            for i in range(0,600,200):
+                for j in range(0,1000,200):
+                    self.letter(self.keyboard_contents[index],j,i,highlight_index==index)
+                    index+=1
+
+    def show_options(self):
+        rows, cols, _ = self.keyboard.shape
+        th_lines = 4
+        cv2.line(self.keyboard, (int(cols / 2) - int(th_lines / 2), 0), (int(cols / 2) - int(th_lines / 2), rows),
+                 (0,0,0), th_lines)
+        cv2.putText(self.keyboard, "LEFT", (80, 300), cv2.FONT_HERSHEY_COMPLEX,color=(0, 0, 0),thickness=3,
+                                        fontScale=3)
+        cv2.putText(self.keyboard, "RIGHT", (80 + int(cols / 2), 300), cv2.FONT_HERSHEY_COMPLEX,color=(0, 0, 0),thickness=3,
+                                        fontScale=3)
 
     def algo(self):
 
         highlight_index=0
         blinking_counter=0
+        is_keyboard_selected=False
+        initial_wait=True
+
         while True:
             _, self.frame = self.capture.read()
-            self.counter+=1
+            rows, cols, _ = self.frame.shape
 
-            if(self.counter%constants.FPS==0):
-                highlight_index+=1
-                highlight_index=highlight_index%13
-                self.counter=0
+            self.keyboard.fill(255)
             self.gray_img = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
-
+            self.frame[rows - 50: rows, 0: cols] = (255, 255, 255)
             self.faces = self.detector(self.gray_img)
-
-            for face in self.faces:
-                landmarks = self.predictor(self.gray_img, face)
-                self.get_gaze_direction(landmarks)
-
-                if (self.is_blinking(landmarks)):
-                    cv2.putText(self.frame, 'Closed', (50, 150), cv2.FONT_HERSHEY_COMPLEX, color=(255, 0, 0), thickness=3,
-                                fontScale=3)
-                    if(blinking_counter==constants.FPS):
-                        print(constants.LEFT_LETTERS[highlight_index])
-                    blinking_counter+=1
-                    self.counter-=1
-
-                else:
-                    blinking_counter=0
+            self.show_options()
 
 
+            if(is_keyboard_selected):
+                self.counter+=1
+
+                if(self.counter%constants.FPS==0):
+                    highlight_index+=1
+                    highlight_index=highlight_index%len(self.keyboard_contents)
+                    self.counter=0
+                self.keyboard.fill(255)
+
+                for face in self.faces:
+                    landmarks = self.predictor(self.gray_img, face)
+
+                    self.show_keys(highlight_index)
+                    if (self.is_blinking(landmarks)):
+                        cv2.putText(self.frame, 'Closed', (50, 150), cv2.FONT_HERSHEY_COMPLEX, color=(255, 0, 0), thickness=3,
+                                        fontScale=3)
+                        if(blinking_counter==constants.FPS):
+                            if(self.keyboard_contents[highlight_index]=='_'):
+                                self.text+=' '
+                            elif(self.keyboard_contents[highlight_index]=='?'):
+                                self.text+='?'
+                            elif(self.keyboard_contents[highlight_index]=='Back'):
+                                is_keyboard_selected=False
+                            else:
+                                self.text+=self.keyboard_contents[highlight_index]
+
+                        blinking_counter+=1
+                        self.counter-=1
+                    else:
+                        blinking_counter=0
+
+
+
+                # cv2.imshow("Frame", self.frame)
+
+
+                # self.show_left_keys(highlight_index)
+                cv2.putText(self.board, self.text, (10, 100), cv2.FONT_HERSHEY_PLAIN, 4, 0, 3)
+
+            else:
+                for face in self.faces:
+                    landmarks = self.predictor(self.gray_img, face)
+
+                    self.show_options()
+
+                    self.current_selected_input_type = self.get_gaze_direction(landmarks)
+
+                    if (self.current_selected_input_type == 'Left'):
+                        self.keyboard_contents=constants.LEFT_LETTERS
+                        self.show_keys(highlight_index)
+                        is_keyboard_selected=True
+                        highlight_index = 0
+                        blinking_counter = 0
+                    elif (self.current_selected_input_type == 'Right'):
+                        self.keyboard_contents=constants.RIGHT_LETTERS
+                        self.show_keys(highlight_index)
+                        is_keyboard_selected=True
+                        highlight_index = 0
+                        blinking_counter = 0
             cv2.imshow("Frame", self.frame)
             cv2.imshow("Keyboard", self.keyboard)
-            self.show_left_keys(highlight_index)
+            cv2.moveWindow("Keyboard", 500, 0)
+            cv2.imshow("Board", self.board)
+            cv2.moveWindow("Board", 500, 1000)
             key = cv2.waitKey(1)
             if key == 27:
                 break
@@ -171,6 +255,7 @@ class Eye():
         cv2.destroyAllWindows()
 
 def main():
+    # sound = pyglet.media.load("click.wav", streaming=False)
     Eye()
 
 

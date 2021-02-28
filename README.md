@@ -1,13 +1,5 @@
 # Contactless password entering interface
 
-### Description
-
-- Pin a page flag by dragging and dropping
-- Create Page Flag
-- Delete Page Flag
-- Add AddText Page Flag
-- Module designed without deletion as of 15/01/2021
-
 ### Tech Stack
 
 - Python

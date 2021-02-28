@@ -3,17 +3,12 @@ import numpy as np
 import dlib
 import math
 import constants
-import pyglet
 from point import Point
 import autocomplete
-
-import  time
+import time
 class Eye():
     def __init__(self):
-        # self.click_notifier=pyglet.media.load('click.wav',streaming=False)
-        # self.sound = pyglet.media.load("click.wav", streaming=False)
 
-        # time.sleep(1)
         self.capture = cv2.VideoCapture(0)
         self.detector = dlib.get_frontal_face_detector()
         self.predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
@@ -41,8 +36,8 @@ class Eye():
         center_bottom = self.get_mid_point(landmarks.part(bottom[0]),
                                       landmarks.part(bottom[1]))
 
-        hor_line = cv2.line(self.frame, (left_point.x, left_point.y), (right_point.x, right_point.y), (0, 255, 0), 2)
-        ver_line = cv2.line(self.frame, (center_top.x, center_top.y), (center_bottom.x, center_bottom.y), (0, 255, 0), 2)
+        cv2.line(self.frame, (left_point.x, left_point.y), (right_point.x, right_point.y), (0, 0, 255), 2)
+        cv2.line(self.frame, (center_top.x, center_top.y), (center_bottom.x, center_bottom.y), (0, 0, 255), 2)
 
         eye_height = self.get_distance(center_bottom, center_top)
         eye_length = self.get_distance(left_point, right_point)
@@ -63,17 +58,18 @@ class Eye():
         return Point(int((p1.x+p2.x)/2),int((p1.y+p2.y)/2))
     def get_distance(self,p1,p2):
         return math.sqrt(pow(p1.x-p2.x,2)+pow(p1.y-p2.y,2))
-    def extract_eye(self,left_eye_region):
+
+    def extract_eye(self,eye_region):
         height, width, _ = self.frame.shape
         mask = np.zeros((height, width), np.uint8)
-        cv2.polylines(mask, [left_eye_region], True, 255, 2)
-        cv2.fillPoly(mask, [left_eye_region], 255)
+        cv2.polylines(mask, [eye_region], True, (0,0,255), 2)
+        cv2.fillPoly(mask, [eye_region], 255)
         left_eye = cv2.bitwise_and(self.gray_img, self.gray_img, mask=mask)
 
-        min_x = np.min(left_eye_region[:, 0])
-        max_x = np.max(left_eye_region[:, 0])
-        min_y = np.min(left_eye_region[:, 1])
-        max_y = np.max(left_eye_region[:, 1])
+        min_x = np.min(eye_region[:, 0])
+        max_x = np.max(eye_region[:, 0])
+        min_y = np.min(eye_region[:, 1])
+        max_y = np.max(eye_region[:, 1])
         gray_eye = left_eye[min_y: max_y, min_x: max_x]
         _, threshold_eye = cv2.threshold(gray_eye, 30, 255, cv2.THRESH_BINARY)
 
@@ -91,6 +87,7 @@ class Eye():
 
         wb_ratio=left_white / right_white
         return  wb_ratio
+
     def get_gaze_direction(self, landmarks):
         left_eye_region = np.array([(landmarks.part(36).x, landmarks.part(36).y),
                                     (landmarks.part(37).x, landmarks.part(37).y),
@@ -104,21 +101,22 @@ class Eye():
                                      (landmarks.part(45).x, landmarks.part(45).y),
                                      (landmarks.part(46).x, landmarks.part(46).y),
                                      (landmarks.part(47).x, landmarks.part(47).y)], np.int32)
+
         left_ratio= self.extract_eye(left_eye_region)
         right_ratio= self.extract_eye(right_eye_region)
 
         if(left_ratio<1 and right_ratio<1):
-            cv2.putText(self.frame, 'Right', (50, 150), cv2.FONT_HERSHEY_COMPLEX, color=(0, 0, 255), thickness=3,
-                        fontScale=3)
+            cv2.putText(self.frame, 'Right', (20, 150), cv2.FONT_HERSHEY_COMPLEX, color=(0, 0, 255), thickness=3,
+                        fontScale=1)
             return "Right"
-        elif(left_ratio>2.4 and right_ratio>2.4):
-            cv2.putText(self.frame, 'Left', (50, 150), cv2.FONT_HERSHEY_COMPLEX, color=(255, 0, 0), thickness=3,
-                        fontScale=3)
+        elif(left_ratio>1.5 and right_ratio>1.5):
+            cv2.putText(self.frame, 'Left', (20, 150), cv2.FONT_HERSHEY_COMPLEX, color=(0, 255, 0), thickness=3,
+                        fontScale=1)
             return "Left"
 
         else:
-            cv2.putText(self.frame, 'Centre', (50, 150), cv2.FONT_HERSHEY_COMPLEX, color=(255, 0, 0), thickness=3,
-                        fontScale=3)
+            cv2.putText(self.frame, 'Centre', (20, 150), cv2.FONT_HERSHEY_COMPLEX, color=(255, 0, 0), thickness=3,
+                        fontScale=1)
             return "Centre"
 
 
@@ -183,17 +181,27 @@ class Eye():
         th_lines = 4
         cv2.line(self.keyboard, (int(cols / 2) - int(th_lines / 2), 0), (int(cols / 2) - int(th_lines / 2), rows),
                  (0,0,0), th_lines)
-        cv2.putText(self.keyboard, "LEFT", (80, 300), cv2.FONT_HERSHEY_COMPLEX,color=(0, 0, 0),thickness=3,
+        cv2.putText(self.keyboard, "ENIHR", (80, 200), cv2.FONT_HERSHEY_COMPLEX,color=(0, 0, 0),thickness=3,
                                         fontScale=3)
-        cv2.putText(self.keyboard, "RIGHT", (80 + int(cols / 2), 300), cv2.FONT_HERSHEY_COMPLEX,color=(0, 0, 0),thickness=3,
+        cv2.putText(self.keyboard, "UCW", (120, 300), cv2.FONT_HERSHEY_COMPLEX,color=(0, 0, 0),thickness=3,
+                                        fontScale=3)
+        cv2.putText(self.keyboard, "YBVJX", (80, 400), cv2.FONT_HERSHEY_COMPLEX,color=(0, 0, 0),thickness=3,
                                         fontScale=3)
 
+        cv2.putText(self.keyboard, "TAOSD", (80 + int(cols / 2), 200), cv2.FONT_HERSHEY_COMPLEX,color=(0, 0, 0),thickness=3,
+                                        fontScale=3)
+        cv2.putText(self.keyboard, "LMF", (140 + int(cols / 2), 300), cv2.FONT_HERSHEY_COMPLEX,color=(0, 0, 0),thickness=3,
+                                        fontScale=3)
+
+        cv2.putText(self.keyboard, "GPKQZ", (80 + int(cols / 2), 400), cv2.FONT_HERSHEY_COMPLEX, color=(0, 0, 0),
+                    thickness=3,
+                    fontScale=3)
     def algo(self):
         highlight_index=0
         blinking_counter=0
         gaze_counter=0
         is_keyboard_selected=False
-
+        prev_gaze=None
 
         while True:
             _, self.frame = self.capture.read()
@@ -201,7 +209,7 @@ class Eye():
 
             self.keyboard.fill(255)
             self.gray_img = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
-            self.frame[rows - 50: rows, 0: cols] = (255, 255, 255)
+            # self.frame[rows - 50: rows, 0: cols] = (255, 255, 255)
             self.faces = self.detector(self.gray_img)
             self.show_options()
 
@@ -219,12 +227,12 @@ class Eye():
                     landmarks = self.predictor(self.gray_img, face)
 
                     self.draw_window(highlight_index)
-                    self.get_gaze_direction(landmarks)
                     if (self.is_blinking(landmarks)):
-                        cv2.putText(self.frame, 'Closed', (50, 150), cv2.FONT_HERSHEY_COMPLEX, color=(255, 0, 0), thickness=3,
-                                        fontScale=3)
-                        if(blinking_counter==constants.FPS):
 
+                        if(blinking_counter==constants.FPS):
+                            cv2.putText(self.frame, 'Selected', (20, 150), cv2.FONT_HERSHEY_COMPLEX, color=(0, 255, 0),
+                                        thickness=3,
+                                        fontScale=1)
                             if(self.keyboard_contents[highlight_index]=='123'):
                                 self.current_selected_input_type='Numeric'
                                 self.keyboard_contents=constants.NUMBERS
@@ -247,12 +255,18 @@ class Eye():
                                 # print(autocomplete.predict('',str(self.text)))
                                 self.counter = 1
                                 highlight_index = 0
-
+                        else:
+                            cv2.putText(self.frame, 'Blinked', (20, 150), cv2.FONT_HERSHEY_COMPLEX, color=(255, 0, 0), thickness=3,
+                                        fontScale=1)
                         blinking_counter+=1
                         self.counter-=1
                     else:
                         blinking_counter=0
 
+                    self.get_eye_dimensions(constants.LEFT_EYE_HORIZONTAL_EXTREMES, constants.LEFT_EYE_TOP,
+                                            constants.LEFT_EYE_BOTTOM, landmarks)
+                    self.get_eye_dimensions(constants.RIGHT_EYE_HORIZONTAL_EXTREMES, constants.RIGHT_EYE_TOP,
+                                            constants.RIGHT_EYE_BOTTOM, landmarks)
                 cv2.putText(self.board, self.text, (10, 100), cv2.FONT_HERSHEY_PLAIN, 4, 0, 3)
 
             else:
@@ -261,9 +275,15 @@ class Eye():
                     self.show_options()
                     self.current_selected_input_type = self.get_gaze_direction(landmarks)
 
+                    if(prev_gaze==None):
+                        prev_gaze=self.current_selected_input_type
 
                     if (self.current_selected_input_type == 'Left'):
-                        gaze_counter+=1
+                        if(prev_gaze==self.current_selected_input_type):
+                            gaze_counter+=1
+                        else:
+                            gaze_counter=0
+                        # gaze_counter+=1
                         if(gaze_counter>constants.FPS):
                             self.keyboard_contents=constants.LEFT_LETTERS
                             self.draw_window(highlight_index)
@@ -271,8 +291,13 @@ class Eye():
                             highlight_index = 0
                             blinking_counter = 0
                             gaze_counter=0
+
                     elif (self.current_selected_input_type == 'Right'):
-                        gaze_counter += 1
+                        if(prev_gaze==self.current_selected_input_type):
+                            gaze_counter+=1
+                        else:
+                            gaze_counter=0
+                        # gaze_counter += 1
                         if (gaze_counter > constants.FPS):
                             self.keyboard_contents=constants.RIGHT_LETTERS
                             self.draw_window(highlight_index)
@@ -281,8 +306,14 @@ class Eye():
                             blinking_counter = 0
                             gaze_counter=0
 
+                    prev_gaze=self.current_selected_input_type
 
+                    self.get_eye_dimensions(constants.LEFT_EYE_HORIZONTAL_EXTREMES, constants.LEFT_EYE_TOP,
+                                    constants.LEFT_EYE_BOTTOM, landmarks)
+                    self.get_eye_dimensions(constants.RIGHT_EYE_HORIZONTAL_EXTREMES, constants.RIGHT_EYE_TOP,
+                                    constants.RIGHT_EYE_BOTTOM, landmarks)
             cv2.imshow("Frame", self.frame)
+            # cv2.moveWindow("Frame", 0, 0)
             cv2.imshow("Keyboard", self.keyboard)
             cv2.moveWindow("Keyboard", 500, 0)
             cv2.imshow("Board", self.board)
@@ -295,7 +326,7 @@ class Eye():
 
 def main():
     # sound = pyglet.media.load("click.wav", streaming=False)
-    autocomplete.load()
+    # autocomplete.load()
     Eye()
 
 
